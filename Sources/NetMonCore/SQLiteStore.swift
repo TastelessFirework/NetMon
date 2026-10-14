@@ -7,8 +7,8 @@ public enum TrafficStoreError: Error, LocalizedError {
 
     public var errorDescription: String? {
         switch self {
-        case .open(let message): return "无法打开数据库：\(message)"
-        case .sqlite(let message): return "数据库错误：\(message)"
+        case .open(let message): return L10n.format("无法打开数据库：{0}", message)
+        case .sqlite(let message): return L10n.format("数据库错误：{0}", message)
         }
     }
 }

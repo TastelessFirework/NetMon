@@ -1,0 +1,2 @@
+"NSLocationUsageDescription" = "Only used to read the current Wi-Fi name (SSID). NetMon does not read or store your geographic location.";
+"NSLocationWhenInUseUsageDescription" = "Only used to read the current Wi-Fi name (SSID). NetMon does not read or store your geographic location.";

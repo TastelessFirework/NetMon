@@ -4,11 +4,11 @@
 
 NetMon 是纯本地的 macOS 菜单栏流量统计工具，按 Wi-Fi SSID 记录上传和下载用量，也支持 Ethernet、PPP/PPPoE、VPN 和其他主网络接口。菜单栏显示实时上传/下载速度与当前网络今日总量，点击展开原生 AppKit 菜单。
 
-当前版本为 **0.1.0 预览版**，功能与安装说明见 [Release 说明](RELEASE_NOTES_v0.1.0.md)。应用使用 ad-hoc 签名，未经过 Apple 公证。
+当前版本为 **0.1.1 预览版**，功能与安装说明见 [Release 说明](RELEASE_NOTES_v0.1.1.md)。应用使用 ad-hoc 签名，未经过 Apple 公证。
 
 ## 下载与快速安装
 
-从 [v0.1.0 Release](https://github.com/TastelessFirework/NetMon/releases/tag/v0.1.0) 下载 **NetMon-0.1.0-arm64.dmg**。打开磁盘映像，只显示 NetMon 与 Applications 两个图标；将 `NetMon.app` 拖入 `Applications` 文件夹，然后从“应用程序”打开。也提供 ZIP 包和 `SHA256SUMS` 校验文件。
+从 [v0.1.1 Release](https://github.com/TastelessFirework/NetMon/releases/tag/v0.1.1) 下载 **NetMon-0.1.1-arm64.dmg**。打开磁盘映像，只显示 NetMon 与 Applications 两个图标；将 `NetMon.app` 拖入 `Applications` 文件夹，然后从“应用程序”打开。也提供 ZIP 包和 `SHA256SUMS` 校验文件。
 
 这是 **macOS 14+ / Apple Silicon 的预览版**，未经过 Apple 公证；首次打开若被系统阻止，请参考下方安装说明。完整实机与最低支持系统验收尚未完成。
 
@@ -28,10 +28,10 @@ NetMon 是纯本地的 macOS 菜单栏流量统计工具，按 Wi-Fi SSID 记录
 - **实时网速**：上传与下载分别显示，菜单展开期间继续更新。
 - **今日 / 本月**：总量、上传、下载分开列出，便于了解用量。
 - **所有网络**：查看各网络与全部网络合计的今日、最近 7 天、本月和全部历史。
-- **设置**：自定义网络名称、登录时启动、SSID 授权与历史管理；登录时启动默认关闭。
+- **设置**：中文 / English 切换、自定义网络名称、登录时启动、SSID 授权与历史管理；登录时启动默认关闭。
 - **Debug**：排查采样问题时查看状态，可选文件日志默认关闭。
 
-以上为实际界面截图；截图中的网速和用量仅展示拍摄时的状态。
+以上为 v0.1.0 的实际界面截图；截图中的网速和用量仅展示拍摄时的状态。v0.1.1 在设置顶部新增“中文”和“English”两行。
 
 ## 功能
 
@@ -47,8 +47,8 @@ NetMon 是纯本地的 macOS 菜单栏流量统计工具，按 Wi-Fi SSID 记录
 ## 系统要求
 
 - macOS 14 或更新版本。
-- 当前提供中文界面，尚未提供英文界面。
-- v0.1.0 支持 **Apple Silicon（M 系列 Mac）/ arm64**；不提供 Intel 或 Universal 应用。
+- 支持中文和 English。在“设置 / Settings”二级菜单顶部选择语言，选中项左侧打勾；默认中文，选择会保存。
+- v0.1.1 支持 **Apple Silicon（M 系列 Mac）/ arm64**；不提供 Intel 或 Universal 应用。
 - 构建需要 Apple Command Line Tools 或完整 Xcode，使用 **Swift 6 或更新版本**（测试使用 Swift Testing；manifest 的 tools-version 为 5.10）。无第三方 SwiftPM 依赖。
 
 ## 从源码构建
@@ -86,7 +86,7 @@ open ~/Applications/NetMon.app
 
 **登录时启动默认关闭**，安装版只有在用户主动开启时才注册；从 `dist` 启动的开发版不能注册登录项。升级时保留系统已有的登录项选择，不会自动关闭用户此前启用的登录项。首次启动会请求位置权限以读取 SSID，拒绝后无法识别的 Wi-Fi 暂停统计。
 
-v0.1.0 采用 ad-hoc 签名，未进行 Apple 公证。网络下载后可能被 Gatekeeper 阻止：先尝试打开应用，再到“系统设置 → 隐私与安全性”按系统提示选择“仍要打开”，随后确认“打开”。此流程取决于系统提供的选项，受管理的 Mac 可能不允许放行，具体见 [Apple 打开未公证应用说明](https://support.apple.com/zh-cn/102445)。
+v0.1.1 采用 ad-hoc 签名，未进行 Apple 公证。网络下载后可能被 Gatekeeper 阻止：先尝试打开应用，再到“系统设置 → 隐私与安全性”按系统提示选择“仍要打开”，随后确认“打开”。此流程取决于系统提供的选项，受管理的 Mac 可能不允许放行，具体见 [Apple 打开未公证应用说明](https://support.apple.com/zh-cn/102445)。
 
 卸载时先关闭登录时启动并退出应用，再将 `.app` 移到废纸篓。若需删除本地历史与日志，可在 Finder 中分别移除下面两个目录。清除历史同时删除自定义名称，不可撤销。
 
@@ -124,7 +124,7 @@ Bundle ID 保留 `com.eric.SSIDTrafficMonitor`，数据目录和设置也保留�
 
 ## 测试与项目结构
 
-自动测试包含 25 项用例，覆盖归属边界、SQLite 持久化与聚合、自定义命名、网络服务排序、用量汇总和 Darwin counter 读取。实机 Wi-Fi A/B、Ethernet、睡眠唤醒、菜单悬停、授权取消、服务排序和登录项验收按 [TESTING.md](TESTING.md) 执行；自动测试不能代替实机验收。
+自动测试包含 31 项用例，覆盖归属边界、SQLite 持久化与聚合、自定义命名、网络服务排序、用量汇总、语言选择与翻译格式、Darwin counter 读取。实机 Wi-Fi A/B、Ethernet、睡眠唤醒、菜单悬停、授权取消、服务排序和登录项验收按 [TESTING.md](TESTING.md) 执行；自动测试不能代替实机验收。
 
 | 路径 | 职责 |
 | --- | --- |

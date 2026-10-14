@@ -12,7 +12,7 @@ esac
 version=$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' Resources/Info.plist)
 architecture=$(lipo -archs dist/NetMon.app/Contents/MacOS/NetMon)
 if [[ "$architecture" != "arm64" ]]; then
-    echo "v0.1.0 release packaging requires arm64; found $architecture" >&2
+    echo "Release packaging requires arm64; found $architecture" >&2
     exit 1
 fi
 name="NetMon-${version}-${architecture}"

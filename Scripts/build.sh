@@ -55,6 +55,8 @@ create_app_bundle() {
     cp "$project_root/Resources/Info.plist" "$contents_path/Info.plist"
     cp "$project_root/LICENSE" "$contents_path/Resources/LICENSE"
     cp "$project_root/Resources/AppIcon.icns" "$contents_path/Resources/AppIcon.icns"
+    cp -R "$project_root/Resources/zh-Hans.lproj" "$contents_path/Resources/"
+    cp -R "$project_root/Resources/en.lproj" "$contents_path/Resources/"
     codesign --force --sign - "$app_path"
     echo "Created $app_path"
 }

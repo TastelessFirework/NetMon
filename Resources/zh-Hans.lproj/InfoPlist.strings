@@ -1,0 +1,2 @@
+"NSLocationUsageDescription" = "仅用于读取当前 Wi-Fi 名称（SSID），不会读取或保存地理位置。";
+"NSLocationWhenInUseUsageDescription" = "仅用于读取当前 Wi-Fi 名称（SSID），不会读取或保存地理位置。";

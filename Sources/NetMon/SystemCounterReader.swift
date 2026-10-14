@@ -8,7 +8,7 @@ enum SystemCounterError: Error, LocalizedError {
     var errorDescription: String? {
         switch self {
         case .readFailed(let interface, let code):
-            return "无法读取 \(interface) 的接口计数器（错误 \(code)）"
+            return L10n.format("无法读取 {0} 的接口计数器（错误 {1}）", interface, String(code))
         }
     }
 }

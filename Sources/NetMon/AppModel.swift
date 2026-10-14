@@ -15,6 +15,19 @@ struct DebugSnapshot {
     var note = "等待第一次采样"
 }
 
+// Resolve app text and error descriptions at display time, including after a language change.
+private enum AppNotice {
+    case message(String)
+    case error(Error)
+
+    var text: String {
+        switch self {
+        case .message(let key): return L10n.text(key)
+        case .error(let error): return error.localizedDescription
+        }
+    }
+}
+
 private struct PendingKey: Hashable {
     let identityKey: String
     let day: String
@@ -34,7 +47,8 @@ final class AppModel {
 
     private(set) var currentIdentity: NetworkIdentity?
     private(set) var currentInterface = "—"
-    private(set) var statusMessage: String?
+    private var statusNotice: AppNotice?
+    var statusMessage: String? { statusNotice?.text }
     private(set) var downloadSpeed = "0 B/s"
     private(set) var uploadSpeed = "0 B/s"
     private(set) var summaries: [NetworkSummary] = []
@@ -43,8 +57,10 @@ final class AppModel {
     var trackEthernet: Bool
     var launchAtLogin = false
     var debugLogging: Bool
-    private(set) var locationStatus = "尚未请求"
-    private(set) var settingsMessage: String?
+    var locationStatus: String { locationAccess.statusText }
+    var isLocationAuthorized: Bool { locationAccess.isAuthorized }
+    private var settingsNotice: AppNotice?
+    var settingsMessage: String? { settingsNotice?.text }
 
     private let store: TrafficStore
     private let resolver = NetworkResolver()
@@ -92,7 +108,6 @@ final class AppModel {
 
         locationAccess.onAuthorizationChange = { [weak self] in
             guard let self else { return }
-            self.locationStatus = self.locationAccess.statusText
             self.handleBoundary("location authorization changed")
         }
     }
@@ -103,9 +118,9 @@ final class AppModel {
     }
 
     var currentNetworkDisplayName: String {
-        currentSummary?.identity.displayName
-            ?? currentIdentity?.displayName
-            ?? "未识别"
+        currentSummary?.identity.localizedDisplayName
+            ?? currentIdentity?.localizedDisplayName
+            ?? L10n.text("未识别")
     }
 
     var currentCustomNetworkName: String? {
@@ -121,7 +136,6 @@ final class AppModel {
     func start() {
         guard !started else { return }
         started = true
-        locationStatus = locationAccess.statusText
         refreshSummaries()
         networkChangeMonitor.start()
         observePowerEvents()
@@ -176,9 +190,9 @@ final class AppModel {
     func setLaunchAtLogin(_ enabled: Bool) {
         do {
             try loginItemController.setEnabled(enabled)
-            settingsMessage = nil
+            settingsNotice = nil
         } catch {
-            settingsMessage = error.localizedDescription
+            settingsNotice = .error(error)
         }
         launchAtLogin = loginItemController.isEnabled
     }
@@ -196,7 +210,7 @@ final class AppModel {
         guard let summary = summaries.first(where: {
             $0.identity.key == identityKey
         }), summary.identity.kind.supportsCustomName else {
-            settingsMessage = "所选 Wi-Fi、Ethernet 或 PPP 尚不可命名。"
+            settingsNotice = .message("所选 Wi-Fi、Ethernet 或 PPP 尚不可命名。")
             return
         }
 
@@ -211,11 +225,13 @@ final class AppModel {
         do {
             try store.setDisplayName(displayName, for: identityKey)
             refreshSummaries()
-            settingsMessage = customName.isEmpty
-                ? "已恢复当前网络的默认名称。"
-                : "当前网络名称已保存。"
+            settingsNotice = .message(
+                customName.isEmpty
+                    ? "已恢复当前网络的默认名称。"
+                    : "当前网络名称已保存。"
+            )
         } catch {
-            settingsMessage = error.localizedDescription
+            settingsNotice = .error(error)
         }
     }
 
@@ -232,7 +248,7 @@ final class AppModel {
         if FileManager.default.fileExists(atPath: url.path) {
             NSWorkspace.shared.activateFileViewerSelecting([url])
         } else {
-            settingsMessage = "启用调试日志并等待一次采样后才会创建日志文件。"
+            settingsNotice = .message("启用调试日志并等待一次采样后才会创建日志文件。")
         }
     }
 
@@ -243,10 +259,10 @@ final class AppModel {
             try store.clearHistory()
             summaries = []
             knownIdentityKeys = []
-            settingsMessage = "历史数据已清除。"
+            settingsNotice = .message("历史数据已清除。")
             sample()
         } catch {
-            settingsMessage = error.localizedDescription
+            settingsNotice = .error(error)
         }
     }
 
@@ -262,7 +278,7 @@ final class AppModel {
 
         let resolution = resolver.resolve()
         currentInterface = resolution.interfaceName ?? "—"
-        statusMessage = resolution.issue
+        statusNotice = resolution.issue.map(AppNotice.message)
 
         if lastObservedIdentity?.key != resolution.identity?.key {
             let oldName = lastObservedIdentity?.displayName ?? "Disconnected"
@@ -289,7 +305,7 @@ final class AppModel {
         guard shouldTrack(identity) else {
             let previous = attributor.baseline
             _ = attributor.ingest(nil)
-            statusMessage = "已在设置中暂停此网络类型的统计"
+            statusNotice = .message("已在设置中暂停此网络类型的统计")
             updateDebug(
                 identity: identity,
                 counters: nil,
@@ -371,7 +387,7 @@ final class AppModel {
                 lastFlushUptime = uptime
             }
         } catch {
-            statusMessage = error.localizedDescription
+            statusNotice = .error(error)
             let previous = attributor.baseline
             _ = attributor.ingest(nil)
             updateSpeeds(download: "0 B/s", upload: "0 B/s")
@@ -477,7 +493,7 @@ final class AppModel {
             pending.removeAll()
             refreshSummaries()
         } catch {
-            statusMessage = error.localizedDescription
+            statusNotice = .error(error)
             debugLogger.log("Database flush failed: \(error.localizedDescription)")
         }
     }
@@ -487,7 +503,7 @@ final class AppModel {
             summaries = try store.fetchSummaries()
             knownIdentityKeys = Set(summaries.map { $0.identity.key })
         } catch {
-            statusMessage = error.localizedDescription
+            statusNotice = .error(error)
         }
     }
 

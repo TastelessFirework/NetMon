@@ -60,6 +60,9 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
     private var downloadSpeedItem: NSMenuItem!
     private var monthItems: UsageMenuItems!
 
+    private var languageItems: [AppLanguage: NSMenuItem] = [:]
+    private var needsLanguageRebuild = false
+
     private var launchAtLoginItem: NSMenuItem!
     private var trackWiFiItem: NSMenuItem!
     private var trackEthernetItem: NSMenuItem!
@@ -143,6 +146,7 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
     func menuDidClose(_ menu: NSMenu) {
         guard menu === rootMenu else { return }
         isRootMenuOpen = false
+        rebuildForLanguageIfNeeded()
         refreshMenu(allowStructureChanges: true)
     }
 
@@ -154,13 +158,13 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
         rootMenu.removeAllItems()
 
         let currentNetworkItem = emphasizedSubmenuItem(
-            "当前网络" + Self.widthAnchor,
+            L10n.text("当前网络") + Self.widthAnchor,
             submenu: currentNetworkMenu,
-            accessibilityTitle: "当前网络"
+            accessibilityTitle: L10n.text("当前网络")
         )
-        currentNetworkItem.setAccessibilityHelp("展开 macOS 网络服务顺序")
+        currentNetworkItem.setAccessibilityHelp(L10n.text("展开 macOS 网络服务顺序"))
         rootMenu.addItem(currentNetworkItem)
-        currentNameItem = readOnlyItem("未识别")
+        currentNameItem = readOnlyItem(L10n.text("未识别"))
         currentInterfaceItem = readOnlyItem("— · —")
         statusMessageItem = readOnlyItem(
             "",
@@ -172,49 +176,49 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
         rootMenu.addItem(statusMessageItem)
         rootMenu.addItem(.separator())
 
-        uploadSpeedItem = readOnlyItem("当前上传速度  0 B/s", systemImage: "arrow.up")
+        uploadSpeedItem = readOnlyItem(L10n.text("当前上传速度  0 B/s"), systemImage: "arrow.up")
         downloadSpeedItem = readOnlyItem(
-            "当前下载速度  0 B/s",
+            L10n.text("当前下载速度  0 B/s"),
             systemImage: "arrow.down"
         )
         rootMenu.addItem(uploadSpeedItem)
         rootMenu.addItem(downloadSpeedItem)
         rootMenu.addItem(.separator())
 
-        rootMenu.addItem(readOnlyItem("今日", emphasized: true))
+        rootMenu.addItem(readOnlyItem(L10n.text("今日"), emphasized: true))
         todayItems = addUsageItems(to: rootMenu)
         rootMenu.addItem(.separator())
 
-        rootMenu.addItem(readOnlyItem("本月", emphasized: true))
+        rootMenu.addItem(readOnlyItem(L10n.text("本月"), emphasized: true))
         monthItems = addUsageItems(to: rootMenu)
         rootMenu.addItem(.separator())
 
         rootMenu.addItem(
-            submenuItem("所有网络", systemImage: "network", submenu: networksMenu)
+            submenuItem(L10n.text("所有网络"), systemImage: "network", submenu: networksMenu)
         )
         rootMenu.addItem(
-            submenuItem("设置", systemImage: "gearshape", submenu: settingsMenu)
+            submenuItem(L10n.text("设置"), systemImage: "gearshape", submenu: settingsMenu)
         )
         rootMenu.addItem(
             submenuItem("Debug", systemImage: "ladybug", submenu: debugMenu)
         )
 
         rootMenu.addItem(.separator())
-        rootMenu.addItem(actionItem("退出 NetMon", action: #selector(quitApplication)))
+        rootMenu.addItem(actionItem(L10n.text("退出 NetMon"), action: #selector(quitApplication)))
     }
 
     private func buildCurrentNetworkMenu() {
         networkSettingsItem = actionItem(
-            "网络设置…",
+            L10n.text("网络设置…"),
             action: #selector(openNetworkSettings)
         )
         networkSettingsItem.image = symbol(
             "network",
-            description: "网络设置"
+            description: L10n.text("网络设置")
         )
         networkSettingsSeparator = .separator()
         networkServiceMessageItem = readOnlyItem(
-            "正在读取网络服务顺序…",
+            L10n.text("正在读取网络服务顺序…"),
             systemImage: "clock"
         )
         rebuildCurrentNetworkMenu(with: nil)
@@ -243,7 +247,7 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
         }
 
         guard !snapshot.services.isEmpty else {
-            setTitle("当前没有可排序的网络服务", on: networkServiceMessageItem)
+            setTitle(L10n.text("当前没有可排序的网络服务"), on: networkServiceMessageItem)
             networkServiceMessageItem.image = symbol(
                 "exclamationmark.triangle",
                 description: networkServiceMessageItem.title
@@ -272,15 +276,15 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
             item.state = service.id == snapshot.preferredServiceID ? .on : .off
             item.setAccessibilityHelp(
                 service.isEnabled
-                    ? "将此服务移到 macOS 网络服务顺序第一位"
-                    : "此系统网络服务当前已停用；仍可调整其服务顺序"
+                    ? L10n.text("将此服务移到 macOS 网络服务顺序第一位")
+                    : L10n.text("此系统网络服务当前已停用；仍可调整其服务顺序")
             )
             currentNetworkMenu.addItem(item)
         }
     }
 
     private func showNetworkServiceReadFailure(_ error: Error) {
-        setTitle("无法读取网络服务顺序", on: networkServiceMessageItem)
+        setTitle(L10n.text("无法读取网络服务顺序"), on: networkServiceMessageItem)
         networkServiceMessageItem.image = symbol(
             "exclamationmark.triangle",
             description: networkServiceMessageItem.title
@@ -291,17 +295,29 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
 
     private func buildSettingsMenu() {
         settingsMenu.removeAllItems()
+        languageItems.removeAll()
+        for language in AppLanguage.allCases {
+            let item = actionItem(
+                language == .chinese ? "中文" : "English",
+                action: #selector(selectLanguage(_:))
+            )
+            item.representedObject = language.rawValue
+            item.state = L10n.language == language ? .on : .off
+            languageItems[language] = item
+            settingsMenu.addItem(item)
+        }
+        settingsMenu.addItem(.separator())
 
         launchAtLoginItem = actionItem(
-            "启动时自动运行",
+            L10n.text("启动时自动运行"),
             action: #selector(toggleLaunchAtLogin)
         )
         trackWiFiItem = actionItem(
-            "统计 Wi-Fi",
+            L10n.text("统计 Wi-Fi"),
             action: #selector(toggleTrackWiFi)
         )
         trackEthernetItem = actionItem(
-            "统计 Ethernet",
+            L10n.text("统计 Ethernet"),
             action: #selector(toggleTrackEthernet)
         )
         settingsMenu.addItem(launchAtLoginItem)
@@ -311,7 +327,7 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
         settingsMenu.addItem(.separator())
         settingsMenu.addItem(
             submenuItem(
-                "自定义网络名称",
+                L10n.text("自定义网络名称"),
                 systemImage: "pencil",
                 submenu: networkNamesMenu
             )
@@ -319,9 +335,9 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
         rebuildNetworkNamesMenu(model.customizableNetworkSummaries)
 
         settingsMenu.addItem(.separator())
-        locationStatusItem = readOnlyItem("SSID 位置权限：尚未请求")
+        locationStatusItem = readOnlyItem(L10n.text("SSID 位置权限：尚未请求"))
         requestLocationItem = actionItem(
-            "允许读取 SSID…",
+            L10n.text("允许读取 SSID…"),
             action: #selector(requestLocationAccess)
         )
         settingsMenu.addItem(locationStatusItem)
@@ -330,19 +346,19 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
         settingsMenu.addItem(.separator())
         settingsMenu.addItem(
             actionItem(
-                "在 Finder 中显示数据库",
+                L10n.text("在 Finder 中显示数据库"),
                 action: #selector(revealDatabase)
             )
         )
 
         let clearMenu = NSMenu()
         configure(menu: clearMenu)
-        clearMenu.addItem(readOnlyItem("此操作无法撤销"))
+        clearMenu.addItem(readOnlyItem(L10n.text("此操作无法撤销")))
         clearMenu.addItem(
-            actionItem("确认清除", action: #selector(clearHistory))
+            actionItem(L10n.text("确认清除"), action: #selector(clearHistory))
         )
         settingsMenu.addItem(
-            submenuItem("清除历史数据…", systemImage: "trash", submenu: clearMenu)
+            submenuItem(L10n.text("清除历史数据…"), systemImage: "trash", submenu: clearMenu)
         )
 
         settingsMessageSeparator = .separator()
@@ -364,7 +380,7 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
         debugPreviousRXItem = readOnlyItem("Previous RX: —")
         debugDeltaTXItem = readOnlyItem("Delta TX: 0")
         debugDeltaRXItem = readOnlyItem("Delta RX: 0")
-        debugStateItem = readOnlyItem("State: 等待第一次采样")
+        debugStateItem = readOnlyItem(L10n.text("State: 等待第一次采样"))
 
         for item in [
             debugSSIDItem!,
@@ -382,13 +398,13 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
 
         debugMenu.addItem(.separator())
         debugLoggingItem = actionItem(
-            "写入调试日志",
+            L10n.text("写入调试日志"),
             action: #selector(toggleDebugLogging)
         )
         debugMenu.addItem(debugLoggingItem)
         debugMenu.addItem(
             actionItem(
-                "在 Finder 中显示调试日志",
+                L10n.text("在 Finder 中显示调试日志"),
                 action: #selector(revealDebugLog)
             )
         )
@@ -396,9 +412,9 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
 
     private func addUsageItems(to menu: NSMenu) -> UsageMenuItems {
         let items = UsageMenuItems(
-            total: readOnlyItem("总流量  0 B", systemImage: "sum"),
-            upload: readOnlyItem("上传  0 B", systemImage: "arrow.up"),
-            download: readOnlyItem("下载  0 B", systemImage: "arrow.down")
+            total: readOnlyItem(L10n.text("总流量  0 B"), systemImage: "sum"),
+            upload: readOnlyItem(L10n.text("上传  0 B"), systemImage: "arrow.up"),
+            download: readOnlyItem(L10n.text("下载  0 B"), systemImage: "arrow.down")
         )
         menu.addItem(items.total)
         menu.addItem(items.upload)
@@ -407,18 +423,19 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
     }
 
     private func refreshMenu(allowStructureChanges: Bool) {
+        if allowStructureChanges { rebuildForLanguageIfNeeded() }
         setTitle(
             model.currentNetworkDisplayName,
             on: currentNameItem
         )
         setTitle(
-            "\(model.currentIdentity?.kind.displayName ?? "—") · " +
+            "\(model.currentIdentity?.kind.localizedDisplayName ?? "—") · " +
                 model.currentInterface,
             on: currentInterfaceItem
         )
 
         if let message = model.statusMessage {
-            setTitle(message, on: statusMessageItem)
+            setTitle(L10n.text(message), on: statusMessageItem)
             if allowStructureChanges {
                 statusMessageItem.isHidden = false
             }
@@ -428,8 +445,8 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
 
         updateUsage(model.currentSummary?.today ?? .init(), items: todayItems)
         updateUsage(model.currentSummary?.month ?? .init(), items: monthItems)
-        setTitle("当前上传速度  \(model.uploadSpeed)", on: uploadSpeedItem)
-        setTitle("当前下载速度  \(model.downloadSpeed)", on: downloadSpeedItem)
+        setTitle(L10n.format("当前上传速度  {0}", model.uploadSpeed), on: uploadSpeedItem)
+        setTitle(L10n.format("当前下载速度  {0}", model.downloadSpeed), on: downloadSpeedItem)
         statusBarPresentation.update(
             statusItem: statusItem,
             uploadSpeed: model.uploadSpeed,
@@ -448,10 +465,10 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
     }
 
     private func updateUsage(_ amount: UsageAmount, items: UsageMenuItems) {
-        setTitle("总流量  \(ByteCountText.string(amount.total))", on: items.total)
-        setTitle("上传  \(ByteCountText.string(amount.upload))", on: items.upload)
+        setTitle(L10n.format("总流量  {0}", ByteCountText.string(amount.total)), on: items.total)
+        setTitle(L10n.format("上传  {0}", ByteCountText.string(amount.upload)), on: items.upload)
         setTitle(
-            "下载  \(ByteCountText.string(amount.download))",
+            L10n.format("下载  {0}", ByteCountText.string(amount.download)),
             on: items.download
         )
     }
@@ -465,7 +482,7 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
 
         let totals = NetworkUsageTotals(summaries: summaries)
         setTitle(
-            "所有网络  " + ByteCountText.string(totals.allTime.total),
+            L10n.text("所有网络  ") + ByteCountText.string(totals.allTime.total),
             on: allNetworksItems.root
         )
         updateUsage(totals.today, items: allNetworksItems.today)
@@ -476,7 +493,7 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
         for summary in summaries {
             guard let items = networkItems[summary.identity.key] else { continue }
             setTitle(
-                "\(summary.identity.displayName)  " +
+                "\(summary.identity.localizedDisplayName)  " +
                     ByteCountText.string(summary.allTime.total),
                 on: items.root
             )
@@ -485,14 +502,14 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
             updateUsage(summary.month, items: items.month)
             updateUsage(summary.allTime, items: items.allTime)
             setTitle(
-                "\(summary.identity.kind.displayName) · " +
+                "\(summary.identity.kind.localizedDisplayName) · " +
                     summary.identity.interfaceName,
                 on: items.typeAndInterface
             )
             setTitle(
-                "首次发现 " + summary.firstSeen.formatted(
-                    date: .abbreviated,
-                    time: .shortened
+                L10n.text("首次发现 ") + summary.firstSeen.formatted(
+                    Date.FormatStyle(date: .abbreviated, time: .shortened)
+                        .locale(L10n.language.locale)
                 ),
                 on: items.firstSeen
             )
@@ -502,19 +519,19 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
     private func buildAllNetworksSummaryMenu() {
         let menu = NSMenu()
         configure(menu: menu)
-        menu.addItem(readOnlyItem("今日", emphasized: true))
+        menu.addItem(readOnlyItem(L10n.text("今日"), emphasized: true))
         let today = addUsageItems(to: menu)
         menu.addItem(.separator())
-        menu.addItem(readOnlyItem("最近 7 天", emphasized: true))
+        menu.addItem(readOnlyItem(L10n.text("最近 7 天"), emphasized: true))
         let recentSevenDays = addUsageItems(to: menu)
         menu.addItem(.separator())
-        menu.addItem(readOnlyItem("本月", emphasized: true))
+        menu.addItem(readOnlyItem(L10n.text("本月"), emphasized: true))
         let month = addUsageItems(to: menu)
         menu.addItem(.separator())
-        menu.addItem(readOnlyItem("全部历史", emphasized: true))
+        menu.addItem(readOnlyItem(L10n.text("全部历史"), emphasized: true))
         let allTime = addUsageItems(to: menu)
         allNetworksItems = AllNetworksMenuItems(
-            root: submenuItem("所有网络  0 B", submenu: menu),
+            root: submenuItem(L10n.text("所有网络  0 B"), submenu: menu),
             today: today,
             recentSevenDays: recentSevenDays,
             month: month,
@@ -530,7 +547,7 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
         networksMenu.addItem(allNetworksSeparator)
 
         guard !summaries.isEmpty else {
-            networksMenu.addItem(readOnlyItem("暂无统计"))
+            networksMenu.addItem(readOnlyItem(L10n.text("暂无统计")))
             return
         }
 
@@ -538,19 +555,19 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
             let menu = NSMenu()
             configure(menu: menu)
 
-            menu.addItem(readOnlyItem("今日", emphasized: true))
+            menu.addItem(readOnlyItem(L10n.text("今日"), emphasized: true))
             let today = addUsageItems(to: menu)
             menu.addItem(.separator())
 
-            menu.addItem(readOnlyItem("最近 7 天", emphasized: true))
+            menu.addItem(readOnlyItem(L10n.text("最近 7 天"), emphasized: true))
             let recentSevenDays = addUsageItems(to: menu)
             menu.addItem(.separator())
 
-            menu.addItem(readOnlyItem("本月", emphasized: true))
+            menu.addItem(readOnlyItem(L10n.text("本月"), emphasized: true))
             let month = addUsageItems(to: menu)
             menu.addItem(.separator())
 
-            menu.addItem(readOnlyItem("全部历史", emphasized: true))
+            menu.addItem(readOnlyItem(L10n.text("全部历史"), emphasized: true))
             let allTime = addUsageItems(to: menu)
             menu.addItem(.separator())
 
@@ -578,16 +595,16 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
         trackWiFiItem.state = model.trackWiFi ? .on : .off
         trackEthernetItem.state = model.trackEthernet ? .on : .off
         refreshNetworkNamesMenu(allowStructureChanges: allowStructureChanges)
-        setTitle("SSID 位置权限：\(model.locationStatus)", on: locationStatusItem)
+        setTitle(L10n.format("SSID 位置权限：{0}", model.locationStatus), on: locationStatusItem)
 
         if allowStructureChanges {
-            requestLocationItem.isHidden = model.locationStatus == "已允许"
+            requestLocationItem.isHidden = model.isLocationAuthorized
             let hasMessage = model.settingsMessage != nil
             settingsMessageSeparator.isHidden = !hasMessage
             settingsMessageItem.isHidden = !hasMessage
         }
         if let message = model.settingsMessage {
-            setTitle(message, on: settingsMessageItem)
+            setTitle(L10n.text(message), on: settingsMessageItem)
         }
     }
 
@@ -611,7 +628,7 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
 
         guard !summaries.isEmpty else {
             networkNamesMenu.addItem(
-                readOnlyItem("暂无 Wi-Fi、Ethernet 或 PPP 记录")
+                readOnlyItem(L10n.text("暂无 Wi-Fi、Ethernet 或 PPP 记录"))
             )
             return
         }
@@ -652,7 +669,7 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
         )
         setTitle("Delta TX: \(debug.deltaUpload)", on: debugDeltaTXItem)
         setTitle("Delta RX: \(debug.deltaDownload)", on: debugDeltaRXItem)
-        setTitle("State: \(debug.note)", on: debugStateItem)
+        setTitle("State: \(L10n.text(debug.note))", on: debugStateItem)
         debugLoggingItem.state = model.debugLogging ? .on : .off
     }
 
@@ -681,7 +698,7 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
             )
         }
         item.setAccessibilityLabel(accessibilityTitle ?? title)
-        item.setAccessibilityHelp("只读信息")
+        item.setAccessibilityHelp(L10n.text("只读信息"))
         return item
     }
 
@@ -741,6 +758,33 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
         value.map(String.init) ?? "—"
     }
 
+    private func rebuildForLanguageIfNeeded() {
+        guard needsLanguageRebuild, !isRootMenuOpen else { return }
+        needsLanguageRebuild = false
+        buildRootMenu()
+        buildCurrentNetworkMenu()
+        buildSettingsMenu()
+        buildDebugMenu()
+        buildAllNetworksSummaryMenu()
+        rebuildNetworksMenu(model.summaries)
+    }
+
+    @objc private func selectLanguage(_ sender: NSMenuItem) {
+        guard let value = sender.representedObject as? String,
+              let language = AppLanguage(rawValue: value),
+              language != L10n.language else { return }
+        LanguagePreference().language = language
+        needsLanguageRebuild = true
+        for (choice, item) in languageItems {
+            item.state = choice == language ? .on : .off
+        }
+        // AppKit can deliver the action before or after menuDidClose.
+        DispatchQueue.main.async { [weak self] in
+            guard let self, !self.isRootMenuOpen else { return }
+            self.refreshMenu(allowStructureChanges: true)
+        }
+    }
+
     @objc private func noOp() {}
 
     @objc private func toggleLaunchAtLogin() {
@@ -781,11 +825,11 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
             do {
                 let actual = try networkServiceOrderManager.read()
                 rebuildCurrentNetworkMenu(with: actual)
-                readbackDescription = "已重新读取并显示 macOS 当前实际服务顺序。"
+                readbackDescription = L10n.text("已重新读取并显示 macOS 当前实际服务顺序。")
             } catch let readbackError {
                 showNetworkServiceReadFailure(readbackError)
                 readbackDescription =
-                    "同时无法重新读取当前服务顺序：" +
+                    L10n.text("同时无法重新读取当前服务顺序：") +
                     readbackError.localizedDescription
             }
             presentNetworkServiceOrderError(
@@ -801,10 +845,10 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
     ) {
         let alert = NSAlert()
         alert.alertStyle = .warning
-        alert.messageText = "无法更改网络服务顺序"
+        alert.messageText = L10n.text("无法更改网络服务顺序")
         alert.informativeText =
             error.localizedDescription + "\n\n" + readbackDescription
-        alert.addButton(withTitle: "好")
+        alert.addButton(withTitle: L10n.text("好"))
         NSApp.activate(ignoringOtherApps: true)
         alert.runModal()
     }
@@ -838,13 +882,13 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
         )
 
         let alert = NSAlert()
-        alert.messageText = "自定义网络名称"
+        alert.messageText = L10n.text("自定义网络名称")
         alert.informativeText =
-            "最多 \(AppModel.maximumCustomNetworkNameLength) 个字符，" +
-            "超出部分会自动截断；留空可恢复默认名称。"
+            L10n.format("最多 {0} 个字符，", String(AppModel.maximumCustomNetworkNameLength)) +
+            L10n.text("超出部分会自动截断；留空可恢复默认名称。")
         alert.accessoryView = textField
-        alert.addButton(withTitle: "保存")
-        alert.addButton(withTitle: "取消")
+        alert.addButton(withTitle: L10n.text("保存"))
+        alert.addButton(withTitle: L10n.text("取消"))
 
         NSApp.activate(ignoringOtherApps: true)
         alert.window.initialFirstResponder = textField

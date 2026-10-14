@@ -17,6 +17,8 @@ public enum NetworkKind: String, Codable, CaseIterable, Sendable {
         }
     }
 
+    public var localizedDisplayName: String { L10n.text(displayName) }
+
     public var supportsCustomName: Bool {
         switch self {
         case .wifi, .ethernet, .ppp:
@@ -33,6 +35,11 @@ public struct NetworkIdentity: Codable, Equatable, Hashable, Sendable {
     public let ssid: String?
     public let kind: NetworkKind
     public let interfaceName: String
+
+    public var localizedDisplayName: String {
+        kind == .other && displayName == "其他网络"
+            ? L10n.text("其他网络") : displayName
+    }
 
     public init(
         key: String,

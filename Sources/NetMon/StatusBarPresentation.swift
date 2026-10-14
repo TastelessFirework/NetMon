@@ -1,4 +1,5 @@
 import AppKit
+import NetMonCore
 
 final class StatusBarSummaryView: NSView {
     private static let font = NSFont.monospacedDigitSystemFont(
@@ -190,9 +191,9 @@ final class StatusBarPresentation {
             usage: todayTotal
         )
         button.setAccessibilityLabel(
-            "NetMon，当前网络 \(currentNetworkName)，上传速度 \(uploadSpeed)，" +
-                "下载速度 \(downloadSpeed)，" +
-                "当前网络今日总流量 \(todayTotal)"
+            L10n.format("NetMon，当前网络 {0}，上传速度 {1}，", currentNetworkName, uploadSpeed) +
+                L10n.format("下载速度 {0}，", downloadSpeed) +
+                L10n.format("当前网络今日总流量 {0}", todayTotal)
         )
     }
 

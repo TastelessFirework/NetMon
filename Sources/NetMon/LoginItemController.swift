@@ -1,5 +1,16 @@
 import Foundation
+import NetMonCore
 import ServiceManagement
+
+private enum LoginItemFailure: LocalizedError, CustomNSError {
+    case notInstalled
+
+    static var errorDomain: String { "SSIDTrafficMonitor.LoginItem" }
+    var errorCode: Int { 1 }
+    var errorDescription: String? {
+        L10n.text("请先将 NetMon 安装到“应用程序”，再从应用包启动。")
+    }
+}
 
 @MainActor
 final class LoginItemController {
@@ -9,14 +20,7 @@ final class LoginItemController {
 
     func setEnabled(_ enabled: Bool) throws {
         guard isInstalledApplication else {
-            throw NSError(
-                domain: "SSIDTrafficMonitor.LoginItem",
-                code: 1,
-                userInfo: [
-                    NSLocalizedDescriptionKey:
-                        "请先用 make install 安装并从 .app 启动。"
-                ]
-            )
+            throw LoginItemFailure.notInstalled
         }
         if enabled {
             try SMAppService.mainApp.register()

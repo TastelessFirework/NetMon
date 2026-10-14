@@ -22,20 +22,20 @@ private enum SystemNetworkServiceOrderFailure: LocalizedError {
         switch self {
         case .authorization(let status):
             let detail = SecCopyErrorMessageString(status, nil) as String?
-                ?? "错误码 \(status)"
-            return "无法创建 macOS 授权会话：\(detail)。"
+                ?? L10n.format("错误码 {0}", String(status))
+            return L10n.format("无法创建 macOS 授权会话：{0}。", detail)
 
         case .accessDenied(let operation):
-            return "管理员授权已取消或未通过，macOS 未允许\(operation)。"
+            return L10n.format("管理员授权已取消或未通过，macOS 未允许{0}。", operation)
 
         case .configuration(let detail):
-            return "无法读取 macOS 网络服务顺序：\(detail)。"
+            return L10n.format("无法读取 macOS 网络服务顺序：{0}。", detail)
 
         case .systemConfiguration(let operation, let code, let detail):
-            return "macOS 未能\(operation)：\(detail)（错误码 \(code)）。"
+            return L10n.format("macOS 未能{0}：{1}（错误码 {2}）。", operation, detail, String(code))
 
         case .verification(let detail):
-            return "系统报告配置已提交并应用，但重新读取时未能确认结果：\(detail)。"
+            return L10n.format("系统报告配置已提交并应用，但重新读取时未能确认结果：{0}。", detail)
         }
     }
 }
@@ -54,7 +54,7 @@ final class NetworkServiceOrderManager {
             "NetMon" as CFString,
             nil
         ) else {
-            throw lastFailure(operation: "建立网络配置读取会话")
+            throw lastFailure(operation: L10n.text("建立网络配置读取会话"))
         }
         return try configuration(in: preferences).snapshot
     }
@@ -85,7 +85,7 @@ final class NetworkServiceOrderManager {
             nil,
             authorization
         ) else {
-            throw lastFailure(operation: "建立已授权的网络配置会话")
+            throw lastFailure(operation: L10n.text("建立已授权的网络配置会话"))
         }
 
         let current = try configuration(in: preferences)
@@ -97,7 +97,7 @@ final class NetworkServiceOrderManager {
             )
         } catch {
             throw SystemNetworkServiceOrderFailure.configuration(
-                "所选服务已不在当前系统服务顺序中"
+                L10n.text("所选服务已不在当前系统服务顺序中")
             )
         }
 
@@ -107,19 +107,19 @@ final class NetworkServiceOrderManager {
 
         guard SCNetworkSetSetServiceOrder(current.set, newOrder as CFArray)
         else {
-            throw lastFailure(operation: "保存新的网络服务顺序")
+            throw lastFailure(operation: L10n.text("保存新的网络服务顺序"))
         }
         guard SCPreferencesCommitChanges(preferences) else {
-            throw lastFailure(operation: "提交网络服务顺序")
+            throw lastFailure(operation: L10n.text("提交网络服务顺序"))
         }
         guard SCPreferencesApplyChanges(preferences) else {
-            throw lastFailure(operation: "应用网络服务顺序")
+            throw lastFailure(operation: L10n.text("应用网络服务顺序"))
         }
 
         let verified = try read()
         guard verified.preferredServiceID == serviceID else {
             throw SystemNetworkServiceOrderFailure.verification(
-                "首位服务仍不是所选服务"
+                L10n.text("首位服务仍不是所选服务")
             )
         }
         return verified
@@ -130,19 +130,19 @@ final class NetworkServiceOrderManager {
     ) throws -> Configuration {
         guard let set = SCNetworkSetCopyCurrent(preferences) else {
             throw SystemNetworkServiceOrderFailure.configuration(
-                "当前没有可用的 network set"
+                L10n.text("当前没有可用的 network set")
             )
         }
         guard let rawServices = SCNetworkSetCopyServices(set)
                 as? [SCNetworkService] else {
             throw SystemNetworkServiceOrderFailure.configuration(
-                "当前 network set 没有可读取的服务列表"
+                L10n.text("当前 network set 没有可读取的服务列表")
             )
         }
         guard let systemOrder = SCNetworkSetGetServiceOrder(set)
                 as? [String] else {
             throw SystemNetworkServiceOrderFailure.configuration(
-                "当前 network set 没有可读取的服务顺序"
+                L10n.text("当前 network set 没有可读取的服务顺序")
             )
         }
 
@@ -156,7 +156,7 @@ final class NetworkServiceOrderManager {
             guard rawServicesByID.updateValue(service, forKey: serviceID) == nil
             else {
                 throw SystemNetworkServiceOrderFailure.configuration(
-                    "系统返回了重复的服务 ID \(serviceID)"
+                    L10n.format("系统返回了重复的服务 ID {0}", serviceID)
                 )
             }
         }
@@ -164,13 +164,13 @@ final class NetworkServiceOrderManager {
         let services = try systemOrder.map { serviceID in
             guard let service = rawServicesByID[serviceID] else {
                 throw SystemNetworkServiceOrderFailure.configuration(
-                    "服务顺序引用了当前服务列表中不存在的 ID"
+                    L10n.text("服务顺序引用了当前服务列表中不存在的 ID")
                 )
             }
             guard let name = SCNetworkServiceGetName(service) as String?,
                   !name.isEmpty else {
                 throw SystemNetworkServiceOrderFailure.configuration(
-                    "服务 \(serviceID) 缺少系统显示名称"
+                    L10n.format("服务 {0} 缺少系统显示名称", serviceID)
                 )
             }
             return OrderedNetworkService(
@@ -188,7 +188,7 @@ final class NetworkServiceOrderManager {
             )
         } catch {
             throw SystemNetworkServiceOrderFailure.configuration(
-                "系统服务列表与服务顺序暂时不一致"
+                L10n.text("系统服务列表与服务顺序暂时不一致")
             )
         }
 

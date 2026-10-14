@@ -1,3 +1,4 @@
+import NetMonCore
 import AppKit
 import CoreLocation
 import Foundation
@@ -27,12 +28,12 @@ final class LocationAccess: NSObject, CLLocationManagerDelegate {
 
     var statusText: String {
         switch status {
-        case .notDetermined: return "尚未请求"
-        case .restricted: return "受系统限制"
-        case .denied: return "已拒绝"
+        case .notDetermined: return L10n.text("尚未请求")
+        case .restricted: return L10n.text("受系统限制")
+        case .denied: return L10n.text("已拒绝")
         case .authorized, .authorizedAlways, .authorizedWhenInUse:
-            return "已允许"
-        @unknown default: return "未知"
+            return L10n.text("已允许")
+        @unknown default: return L10n.text("未知")
         }
     }
 
