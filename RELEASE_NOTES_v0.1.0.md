@@ -29,7 +29,7 @@ NetMon 是纯本地的 macOS 菜单栏流量统计工具。它显示实时上传
 
 v0.1.0 支持 **macOS 14+、Apple Silicon（M 系列 Mac）/ arm64**，不提供 Intel 或 Universal 构建。
 
-DMG：打开磁盘映像，将 `NetMon.app` 拖入 `Applications` 文件夹。
+DMG：打开磁盘映像，仅显示 NetMon 与 Applications 两个图标；将 `NetMon.app` 拖入 `Applications` 文件夹。许可证保留在应用包内，安装说明见本页。
 
 ZIP：解压后将完整的 `NetMon.app` 放到 `/Applications` 或 `~/Applications`。
 

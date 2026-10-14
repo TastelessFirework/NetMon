@@ -8,7 +8,7 @@ NetMon 是纯本地的 macOS 菜单栏流量统计工具，按 Wi-Fi SSID 记录
 
 ## 下载与快速安装
 
-从 [v0.1.0 Release](https://github.com/TastelessFirework/NetMon/releases/tag/v0.1.0) 下载 **NetMon-0.1.0-arm64.dmg**。打开磁盘映像，将 `NetMon.app` 拖入 `Applications` 文件夹，然后从“应用程序”打开。也提供 ZIP 包和 `SHA256SUMS` 校验文件。
+从 [v0.1.0 Release](https://github.com/TastelessFirework/NetMon/releases/tag/v0.1.0) 下载 **NetMon-0.1.0-arm64.dmg**。打开磁盘映像，只显示 NetMon 与 Applications 两个图标；将 `NetMon.app` 拖入 `Applications` 文件夹，然后从“应用程序”打开。也提供 ZIP 包和 `SHA256SUMS` 校验文件。
 
 这是 **macOS 14+ / Apple Silicon 的预览版**，未经过 Apple 公证；首次打开若被系统阻止，请参考下方安装说明。完整实机与最低支持系统验收尚未完成。
 
