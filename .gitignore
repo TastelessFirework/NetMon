@@ -1,0 +1,51 @@
+# SwiftPM and generated application/release artifacts
+/.build/
+/.swiftpm/
+/dist/
+/DerivedData/
+*.app/
+*.dSYM/
+*.zip
+*.dmg
+*.pkg
+
+# macOS and editor state
+*.xcuserstate
+xcuserdata/
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Local usage data and debug logs
+*.sqlite
+*.sqlite3
+*.sqlite3-shm
+*.sqlite3-wal
+*.sqlite-shm
+*.sqlite-wal
+*.db
+*.db-shm
+*.db-wal
+*.log
+
+# Credentials, signing material, and local configuration
+.env
+.env.*
+!.env.example
+*.p12
+*.pfx
+*.p8
+*.pem
+*.key
+*.cer
+*.mobileprovision
+*.provisionprofile
+/.aws/
+/.agents/
+/.codex/
+
+# Local development history and release audit notes
+/DEVELOPMENT_STATUS.md
+/RELEASE_READINESS.md
