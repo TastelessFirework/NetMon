@@ -1,4 +1,4 @@
-.PHONY: build release test app icon install
+.PHONY: build release test app icon install package
 
 INSTALL_DIR ?= $(HOME)/Applications
 
@@ -21,3 +21,6 @@ install: app
 	mkdir -p "$(INSTALL_DIR)"
 	ditto "dist/NetMon.app" "$(INSTALL_DIR)/NetMon.app"
 	@echo "Installed $(INSTALL_DIR)/NetMon.app"
+
+package:
+	./Scripts/package.sh

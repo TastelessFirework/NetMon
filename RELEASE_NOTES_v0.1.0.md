@@ -1,8 +1,18 @@
-# NetMon v0.1.0 — 首个公开预览版（草稿）
+# NetMon v0.1.0 — 首个公开预览版
 
 v0.1.0 为预览版，使用 ad-hoc 签名，未经过 Apple 公证。项目采用 MIT 许可证，版权署名为 `Eric`。
 
 NetMon 是纯本地的 macOS 菜单栏流量统计工具。它显示实时上传/下载速度与当前网络的今日总量，并按 Wi-Fi SSID 保存历史用量。
+
+## 界面预览
+
+![菜单栏实时网速与今日流量](https://raw.githubusercontent.com/TastelessFirework/NetMon/v0.1.0/docs/images/menu-bar.png)
+
+左侧为上传 / 下载速度，右侧为当前网络名称与今日总流量。
+
+<img src="https://raw.githubusercontent.com/TastelessFirework/NetMon/v0.1.0/docs/images/main-menu.png" alt="NetMon 主菜单与流量明细" width="360">
+
+点击菜单栏可查看今日、本月上传 / 下载 / 总量；“所有网络”中还可查看最近 7 天、全部历史与所有网络合计。截图为真实界面，数值为拍摄时状态。
 
 ## 本版功能
 
@@ -19,7 +29,11 @@ NetMon 是纯本地的 macOS 菜单栏流量统计工具。它显示实时上传
 
 v0.1.0 支持 **macOS 14+、Apple Silicon（M 系列 Mac）/ arm64**，不提供 Intel 或 Universal 构建。
 
-解压后将完整的 `NetMon.app` 放到 `/Applications` 或 `~/Applications`。首次启动会请求位置权限，以读取 Wi-Fi SSID；不读取经纬度。拒绝授权时，无法识别 SSID 的 Wi-Fi 暂停统计。
+DMG：打开磁盘映像，将 `NetMon.app` 拖入 `Applications` 文件夹。
+
+ZIP：解压后将完整的 `NetMon.app` 放到 `/Applications` 或 `~/Applications`。
+
+首次启动会请求位置权限，以读取 Wi-Fi SSID；不读取经纬度。拒绝授权时，无法识别 SSID 的 Wi-Fi 暂停统计。
 
 登录时启动默认关闭，可由用户在设置中主动开启；升级时保留已有的系统登录项状态。修改系统网络服务顺序需要管理员认证，可能影响网络连接；每次真实修改都会销毁本次授权。
 
@@ -32,16 +46,18 @@ v0.1.0 支持 **macOS 14+、Apple Silicon（M 系列 Mac）/ arm64**，不提供
 - VPN 底层物理接口使用启发式选择，多接口/分流场景尚未实机验证；接口流量包含协议开销，不等于运营商账单。
 - 跨午夜区间记到结束日；异常退出可能丢失约 10 秒未落盘数据。
 - 数据库与主动启用的文件日志为明文，含 SSID 等个人网络信息；分享前脱敏。清除历史也删除自定义名称。
+- 目前仅提供中文界面，尚未支持英文。
 - 没有自动更新器，更新前退出应用，再替换应用包。
 - 完整实机 Wi-Fi 切换、睡眠、权限、登录项与最新菜单显示矩阵尚待验收。
 
 ## 验证状态与发行文件
 
-25 项自动测试通过；Release 构建、arm64 架构、最低部署版本 14.0、ad-hoc 签名、许可证随包分发及 ZIP 解压签名已校验。最低支持系统与完整实机验收仍待验证，编译最低版本字段不代表实际兼容性测试已完成。
+25 项自动测试通过；Release 构建、arm64 架构、最低部署版本 14.0、ad-hoc 签名、许可证随包分发、ZIP 解压签名及 DMG 只读挂载后的应用签名、许可证和 Applications 快捷方式已校验。最低支持系统与完整实机验收仍待验证，编译最低版本字段不代表实际兼容性测试已完成。
 
-发行候选文件为：
+发行文件为：
 
+- `NetMon-0.1.0-arm64.dmg`：磁盘映像，含应用与 Applications 快捷方式。
 - `NetMon-0.1.0-arm64.zip`：ad-hoc 预览包。
-- `SHA256SUMS`：该 ZIP 的 SHA-256，重签名、公证、许可证或代码变化后必须重建。
+- `SHA256SUMS`：DMG 与 ZIP 的 SHA-256，重签名、公证、许可证或代码变化后必须重建。
 
-源码构建、数据路径与卸载方法见 [README](README.md)。
+源码构建、数据路径与卸载方法见 [README](https://github.com/TastelessFirework/NetMon/blob/v0.1.0/README.md)。

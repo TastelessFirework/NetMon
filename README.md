@@ -1,8 +1,37 @@
 # NetMon
 
+<img src="Resources/AppIcon.png" alt="NetMon 图标：蛛网与蓝色独眼怪" width="112">
+
 NetMon 是纯本地的 macOS 菜单栏流量统计工具，按 Wi-Fi SSID 记录上传和下载用量，也支持 Ethernet、PPP/PPPoE、VPN 和其他主网络接口。菜单栏显示实时上传/下载速度与当前网络今日总量，点击展开原生 AppKit 菜单。
 
 当前版本为 **0.1.0 预览版**，功能与安装说明见 [Release 说明](RELEASE_NOTES_v0.1.0.md)。应用使用 ad-hoc 签名，未经过 Apple 公证。
+
+## 下载与快速安装
+
+从 [v0.1.0 Release](https://github.com/TastelessFirework/NetMon/releases/tag/v0.1.0) 下载 **NetMon-0.1.0-arm64.dmg**。打开磁盘映像，将 `NetMon.app` 拖入 `Applications` 文件夹，然后从“应用程序”打开。也提供 ZIP 包和 `SHA256SUMS` 校验文件。
+
+这是 **macOS 14+ / Apple Silicon 的预览版**，未经过 Apple 公证；首次打开若被系统阻止，请参考下方安装说明。完整实机与最低支持系统验收尚未完成。
+
+## 界面与功能导览
+
+### 在菜单栏随时查看网速
+
+![NetMon 菜单栏实时上传、下载速度与今日流量](docs/images/menu-bar.png)
+
+左侧两行分别显示实时上传和下载速度；右侧上方显示自定义网络名称（未命名时为 `usage`），下方显示当前网络的今日总流量。无需打开窗口，就能了解网络是否正在传输数据。
+
+### 点击查看流量明细
+
+<img src="docs/images/main-menu.png" alt="NetMon 原生菜单：当前网络、实时网速、今日和本月流量，以及所有网络与设置入口" width="360">
+
+- **当前网络**：查看名称和接口，并通过子菜单查看、调整系统网络服务顺序；真实修改需要管理员认证。
+- **实时网速**：上传与下载分别显示，菜单展开期间继续更新。
+- **今日 / 本月**：总量、上传、下载分开列出，便于了解用量。
+- **所有网络**：查看各网络与全部网络合计的今日、最近 7 天、本月和全部历史。
+- **设置**：自定义网络名称、登录时启动、SSID 授权与历史管理；登录时启动默认关闭。
+- **Debug**：排查采样问题时查看状态，可选文件日志默认关闭。
+
+以上为用户提供的实际界面截图；截图中的网速和用量仅展示拍摄时的状态。
 
 ## 功能
 
@@ -18,6 +47,7 @@ NetMon 是纯本地的 macOS 菜单栏流量统计工具，按 Wi-Fi SSID 记录
 ## 系统要求
 
 - macOS 14 或更新版本。
+- 当前提供中文界面，尚未提供英文界面。
 - v0.1.0 支持 **Apple Silicon（M 系列 Mac）/ arm64**；不提供 Intel 或 Universal 应用。
 - 构建需要 Apple Command Line Tools 或完整 Xcode，使用 **Swift 6 或更新版本**（测试使用 Swift Testing；manifest 的 tools-version 为 5.10）。无第三方 SwiftPM 依赖。
 
@@ -28,6 +58,7 @@ NetMon 是纯本地的 macOS 菜单栏流量统计工具，按 Wi-Fi SSID 记录
 ```bash
 make test      # 核心逻辑、SQLite 和本机 loopback counter smoke test
 make app       # Release 编译 + dist/NetMon.app + ad-hoc 签名
+make package   # 构建并生成 DMG、ZIP 与 SHA256SUMS（不安装、不发布）
 ```
 
 其他入口为 `make build`（Debug）和 `make release`（Release 可执行文件）。脚本使用项目内的 module cache，并传入 SwiftPM `--disable-sandbox` 以兼容本地工具链；这不代表应用启用了或关闭了 App Sandbox。当前应用没有 App Sandbox entitlement。
@@ -102,6 +133,7 @@ Bundle ID 保留 `com.eric.SSIDTrafficMonitor`，数据目录和设置也保留�
 | `Sources/NetMon` | AppKit 菜单、网络解析、授权、登录项与采样调度 |
 | `Resources/Info.plist` | 版本、Bundle ID、最低系统版本、位置用途说明 |
 | `Scripts/build.sh` | SDK 选择、测试、编译与应用打包 |
+| `Scripts/package.sh` | arm64 校验、DMG/ZIP 分发包与 SHA-256 校验文件 |
 
 ## 许可证与发布
 
